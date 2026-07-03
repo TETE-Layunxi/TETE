@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KRAFTON X TENCENT 리더십 워크샵 답사 동선 (하와이 오아후)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, "Noto Sans KR", "Malgun Gothic", sans-serif; height: 100vh; display: flex; overflow: hidden; }
+  #sidebar {
+    width: 400px; min-width: 400px; height: 100vh; overflow-y: auto;
+    background: #1a1d24; color: #e8e8e8; padding: 18px 16px;
+  }
+  #sidebar h1 { font-size: 17px; color: #fff; letter-spacing: -0.02em; margin-bottom: 4px; }
+  #sidebar .sub { font-size: 12px; color: #9aa0ab; margin-bottom: 14px; }
+  .day-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .day-btn {
+    border: 1px solid #3a3f4a; background: #262a33; color: #cfd3da;
+    border-radius: 16px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  }
+  .day-btn.active { color: #111; border-color: transparent; }
+  .day-info { }
+  .day-title { font-size: 15px; font-weight: 800; margin: 10px 0 2px; }
+  .day-date { font-size: 12px; color: #9aa0ab; margin-bottom: 8px; }
+  .day-total {
+    background: #262a33; border-radius: 8px; padding: 8px 12px; font-size: 12.5px;
+    margin-bottom: 10px; color: #ffd580; font-weight: 700;
+  }
+  .seg {
+    border-left: 3px solid #444; padding: 7px 10px; margin-bottom: 6px;
+    background: #21252d; border-radius: 0 8px 8px 0; font-size: 12.5px; line-height: 1.55;
+  }
+  .seg .route { font-weight: 700; color: #fff; }
+  .seg .dist { color: #7fd4a0; font-weight: 700; }
+  .seg .time { color: #9aa0ab; }
+  .stop-list { margin-top: 12px; }
+  .stop {
+    display: flex; gap: 8px; align-items: flex-start; padding: 5px 2px;
+    border-bottom: 1px solid #262a33; font-size: 12.5px; cursor: pointer;
+  }
+  .stop:hover { background: #262a33; }
+  .stop .num {
+    min-width: 20px; height: 20px; border-radius: 50%; color: #111;
+    font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .stop .t { color: #ffd580; font-size: 11.5px; min-width: 40px; margin-top: 2px; }
+  .stop .nm { color: #e8e8e8; }
+  .stop .nm small { color: #9aa0ab; display: block; }
+  .note { font-size: 11px; color: #7a808c; margin-top: 14px; line-height: 1.6; }
+  #map { flex: 1; height: 100vh; }
+  .num-icon {
+    border-radius: 50%; color: #111; font-weight: 800; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+  }
+  .leaflet-popup-content { font-size: 13px; line-height: 1.6; }
+  .leaflet-popup-content b { font-size: 13.5px; }
+  .approx { color:#c9a227; font-size: 11px; }
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h1>🌺 KRAFTON X TENCENT 답사 동선</h1>
+  <div class="sub">2026-07-05(일) ~ 07-12(일) · 하와이 오아후 · 전용차량</div>
+  <div class="day-btns" id="dayBtns"></div>
+  <div class="day-info" id="dayInfo"></div>
+  <div class="note">
+    ※ 이동거리·소요시간은 구글맵 차량 경로 기준 추정치이며 교통상황에 따라 달라질 수 있음<br>
+    ※ (위치 추정) 표기 지점은 일정표에 정확한 주소가 없어 대표 위치로 표시함<br>
+    ※ Day1 인천→호놀룰루(KE053), Day7 호놀룰루→인천(KE8054) 항공편은 지도에서 제외
+  </div>
+</div>
+<div id="map"></div>
+
+<script>
+// ─────────────────────────── 데이터 ───────────────────────────
+// 각 stop: [위도, 경도, 시간, 이름, 부가설명], 각 leg: 앞 stop→뒤 stop 차량 이동 [거리km, 소요분] (도보·체류는 0)
+var DAYS = [
+  {
+    id: 1, date: "7/5 (일)", color: "#e74c3c", title: "Day 1 · 도착 + 와이키키",
+    hotel: "Holiday Inn Express Waikiki",
+    stops: [
+      [21.3187, -157.9224, "10:55", "호놀룰루 국제공항 도착", "입국심사 + 국제선 동선 답사 (버스·밴 탑승장, 터치다운 장소), 12:00 중식(미정)"],
+      [21.27756, -157.82533, "13:00", "마켓플레이스", "VIP 현지 기프트 확인 — 마우이다이버스 쥬얼리, 마틴맥아더 코아나무 데스크 악세서리"],
+      [21.28017, -157.82732, "16:00", "Holiday Inn Express Waikiki 체크인", "호텔 개인 정비"],
+      [21.27829, -157.82862, "18:00", "석식 : PF창", "에피타이저 2 + 메인 4 쉐어 → 19:00 호텔 투숙"]
+    ],
+    legs: [[15.4, 22], [0.5, 3], [0.4, 2]]
+  },
+  {
+    id: 2, date: "7/6 (월)", color: "#e67e22", title: "Day 2 · 터틀스노클링 + 폴리네시안 문화센터",
+    hotel: "Holiday Inn Express Waikiki",
+    stops: [
+      [21.28017, -157.82732, "07:30", "호텔 출발", "호텔 조식 후 하버 이동"],
+      [21.29268, -157.85850, "08:00", "터틀스노클링 요트 (케왈로 베이슨 하버)", "08:00 승선 ~ 10:30 하선 · 멀미약 복용 필수"],
+      [21.28017, -157.82732, "11:00", "호텔 개인 정비", "12:00 가이드 미팅 후 북부 이동"],
+      [21.68347, -157.94519, "13:30", "중식 : 새우트럭 (카후쿠)", "지오반니 새우트럭 일대"],
+      [21.63925, -157.92063, "14:00", "폴리네시안 문화 센터", "게이트웨이 뷔페 PKG : 빌리지투어 + 루아우뷔페(석식) + HA쇼 → 21:00 출발"],
+      [21.28017, -157.82732, "22:00", "호텔 도착 및 휴식", ""]
+    ],
+    legs: [[3.2, 10], [3.2, 10], [58.0, 75], [6.5, 9], [55.0, 62]]
+  },
+  {
+    id: 3, date: "7/7 (화)", color: "#f1c40f", title: "Day 3 · 호텔 인스펙션 데이",
+    hotel: "The Kahala Hotel & Resort",
+    stops: [
+      [21.28017, -157.82732, "08:20", "호텔 체크아웃", "인솔자 로비 미팅"],
+      [21.26485, -157.77104, "09:00", "카할라 리조트 인스펙션", "벨 짐 보관 · 버스 승하차 장소, 만찬장, 밍글링룸, 시설 체크 · 11:30 중식 : 세라 레스토랑 (로코모코/버거)"],
+      [21.27669, -157.82661, "13:00", "모아나 서프라이더 인스펙션", "버스 승하차 장소, 만찬장, 밍글링룸, 시설 체크"],
+      [21.28065, -157.83023, "15:30", "Urgent Care Clinic of Waikiki", "연계 병원 답사 15:30~16:00 · 3층 Dr. Hori · +1 808 924 3399"],
+      [21.29103, -157.84366, "16:20", "알라모아나 쇼핑센터 답사", "18:00 가이드 미팅"],
+      [21.29379, -157.84175, "20:00", "석식 : 온기 레스토랑 (위치 추정)", "양념갈비, 오징어볶음, 냉면/찌개"],
+      [21.26485, -157.77104, "21:30", "카할라 리조트 투숙", ""]
+    ],
+    legs: [[7.2, 14], [7.2, 14], [0.6, 3], [2.9, 9], [0.5, 3], [7.5, 15]]
+  },
+  {
+    id: 4, date: "7/8 (수)", color: "#2ecc71", title: "Day 4 · 노스쇼어 + 쿠알로아 랜치",
+    hotel: "The Kahala Hotel & Resort",
+    stops: [
+      [21.26485, -157.77104, "08:00", "카할라 리조트 출발", "호텔 조식 후 인솔자 로비 미팅"],
+      [21.52546, -158.03758, "08:30", "돌 플랜테이션 답사", ""],
+      [21.59730, -158.10441, "10:20", "노스쇼어 할레이바 비치 파크 답사", ""],
+      [21.52083, -157.83962, "12:00", "쿠알로아 랜치", "중식 : 샌드위치/갈릭쉬림프/버거 · 13:45 UTV 랩터 투어 2시간 (드라이버 동승)"],
+      [21.26485, -157.77104, "17:00", "카할라 리조트 체크인·개인정비", "16:00 가이드 미팅"],
+      [21.27858, -157.82406, "18:00", "석식 : 다나카 오브 도쿄 (위치 추정)", "샐러드, 쉬림프, 철판볶음, 립아이, 치킨 콤보 → 19:45 호텔 복귀"]
+    ],
+    legs: [[50.0, 48], [11.5, 15], [39.0, 44], [37.5, 42], [7.0, 15]]
+  },
+  {
+    id: 5, date: "7/9 (목)", color: "#1abc9c", title: "Day 5 · 카네오헤베이 + 차량업체 점검",
+    hotel: "Moana Surfrider, A Westin Resort & Spa",
+    stops: [
+      [21.26485, -157.77104, "07:50", "카할라 체크아웃", "인솔자 로비 미팅"],
+      [21.44816, -157.80809, "09:00", "카네오헤베이 카타마란 차터 3시간", "스노클링, 워터발리볼, 패들보드, 바나나보트/범퍼튜브 · 13:30 중식(미정)"],
+      [21.27669, -157.82661, "14:00", "모아나 서프라이더 체크인", "얼리체크인 불가 시 서커스 이후 체크인"],
+      [21.32000, -157.88500, "15:00", "대형 버스 업체 방문 (위치 추정)", "53~58인승 버스 컨디션 확인"],
+      [21.32550, -157.89000, "16:20", "밴 업체 방문 (위치 추정)", "2025년식 캐딜락 롱바디, 서버번 확인"],
+      [21.29175, -157.86067, "17:00", "석식 : 53 바이더씨", "양식 3코스"],
+      [21.27780, -157.82750, "20:00", "태양의 서커스 2부 관람 (80분)", "우천 대체 일정 → 21:30 호텔 체크인·휴식"]
+    ],
+    legs: [[24.5, 30], [21.5, 30], [8.5, 16], [1.2, 4], [5.5, 12], [4.8, 12]]
+  },
+  {
+    id: 6, date: "7/10 (금)", color: "#3498db", title: "Day 6 · 다이아몬드헤드 + 동부해안 + 선셋 크루즈",
+    hotel: "Moana Surfrider, A Westin Resort & Spa",
+    stops: [
+      [21.27669, -157.82661, "07:30", "모아나 서프라이더 출발", "호텔 조식 후 인솔자 로비 미팅"],
+      [21.26290, -157.80572, "08:00", "다이아몬드 헤드 트래킹", ""],
+      [21.28134, -157.67739, "09:30", "하로나 블로우홀 (동부해안 투어)", ""],
+      [21.28527, -157.67210, "09:50", "샌디 비치", ""],
+      [21.30963, -157.65038, "10:20", "마카푸 포인트", ""],
+      [21.26485, -157.77104, "12:00", "중식 : 플루메리아 비치 하우스 (카할라 리조트)", "시그니처 벤또 + 음료"],
+      [21.27669, -157.82661, "13:00", "호텔 이동·정비", "14:30 VIP 업체 방문(럭셔리 밴) · 15:30 호텔 인근 병원·약국 답사 · 16:30 가이드 미팅"],
+      [21.30748, -157.86608, "17:00", "Star of Honolulu 만찬 크루즈", "5 Star 만찬 + 금요일 불꽃놀이 (본진 X) · 20:45 하선"],
+      [21.27669, -157.82661, "21:10", "호텔 투숙 및 휴식", ""]
+    ],
+    legs: [[3.8, 10], [14.0, 18], [1.5, 3], [4.0, 6], [17.0, 22], [7.2, 14], [5.3, 13], [5.3, 13]]
+  },
+  {
+    id: 7, date: "7/11 (토)", color: "#9b59b6", title: "Day 7 · 출국",
+    hotel: "기내숙박 (KE8054) → 7/12(일) 19:10 인천 도착",
+    stops: [
+      [21.27669, -157.82661, "11:10", "모아나 서프라이더 체크아웃", "호텔 조식 후 11:00 인솔자 로비 미팅"],
+      [21.3187, -157.9224, "14:35", "호놀룰루 국제공항 출발", "KE8054 → 7/12(일) 19:10 인천 도착, 개별 귀가"]
+    ],
+    legs: [[15.4, 24]]
+  }
+];
+
+// ─────────────────────────── 지도 ───────────────────────────
+var map = L.map('map', { zoomControl: true }).setView([21.44, -157.85], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+var layerGroup = L.layerGroup().addTo(map);
+var current = 0; // 0 = 전체
+
+function numIcon(color, n) {
+  return L.divIcon({
+    className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+    html: '<div class="num-icon" style="width:26px;height:26px;background:' + color + '">' + n + '</div>'
+  });
+}
+
+function drawDay(day, dim) {
+  var pts = day.stops.map(function (s) { return [s[0], s[1]]; });
+  var line = L.polyline(pts, {
+    color: day.color, weight: dim ? 3 : 5, opacity: dim ? 0.45 : 0.9, dashArray: dim ? '6 6' : null
+  }).addTo(layerGroup);
+  if (!dim) {
+    day.stops.forEach(function (s, i) {
+      L.marker([s[0], s[1]], { icon: numIcon(day.color, i + 1) })
+        .bindPopup('<b>' + (i + 1) + '. ' + s[3] + '</b><br><span style="color:#c47f00;font-weight:700">' + s[2] + '</span> · ' + day.date +
+          (s[4] ? '<br>' + s[4] : '') +
+          (i < day.legs.length ? '<br><span class="approx">다음 구간 → 약 ' + day.legs[i][0].toFixed(1) + 'km · 차량 ' + day.legs[i][1] + '분</span>' : ''))
+        .addTo(layerGroup);
+    });
+  } else {
+    line.bindTooltip('Day ' + day.id + ' · ' + day.date, { sticky: true });
+  }
+  return pts;
+}
+
+function render(dayId) {
+  current = dayId;
+  layerGroup.clearLayers();
+  var boundsPts = [];
+  if (dayId === 0) {
+    DAYS.forEach(function (d) { boundsPts = boundsPts.concat(drawDay(d, true)); });
+    // 전체 보기에서도 주요 거점 마커
+    DAYS.forEach(function (d) {
+      d.stops.forEach(function (s, i) {
+        if (i === 0 || i === d.stops.length - 1) return;
+        L.circleMarker([s[0], s[1]], { radius: 4, color: d.color, fillColor: d.color, fillOpacity: 0.9 })
+          .bindTooltip('D' + d.id + ' · ' + s[3]).addTo(layerGroup);
+      });
+    });
+  } else {
+    var d = DAYS[dayId - 1];
+    boundsPts = drawDay(d, false);
+  }
+  if (boundsPts.length) map.fitBounds(boundsPts, { padding: [40, 40] });
+  renderSidebar(dayId);
+  renderBtns();
+}
+
+// ─────────────────────────── 사이드바 ───────────────────────────
+function renderBtns() {
+  var html = '<button class="day-btn' + (current === 0 ? ' active' : '') + '" style="' + (current === 0 ? 'background:#fff' : '') + '" onclick="render(0)">전체</button>';
+  DAYS.forEach(function (d) {
+    var act = current === d.id;
+    html += '<button class="day-btn' + (act ? ' active' : '') + '" style="' + (act ? 'background:' + d.color : 'border-color:' + d.color + '55') + '" onclick="render(' + d.id + ')">D' + d.id + '</button>';
+  });
+  document.getElementById('dayBtns').innerHTML = html;
+}
+
+function renderSidebar(dayId) {
+  var el = document.getElementById('dayInfo');
+  if (dayId === 0) {
+    var totKm = 0, totMin = 0, rows = '';
+    DAYS.forEach(function (d) {
+      var km = 0, mn = 0;
+      d.legs.forEach(function (l) { km += l[0]; mn += l[1]; });
+      totKm += km; totMin += mn;
+      rows += '<div class="seg" style="border-color:' + d.color + '">' +
+        '<span class="route">Day ' + d.id + ' · ' + d.date + '</span> — ' + d.title.split('·')[1].trim() +
+        '<br><span class="dist">약 ' + km.toFixed(0) + 'km</span> · <span class="time">차량 약 ' + Math.round(mn / 60 * 10) / 10 + '시간</span>' +
+        '<br><span class="time">숙소 : ' + d.hotel + '</span></div>';
+    });
+    el.innerHTML = '<div class="day-title">전체 일정 요약</div>' +
+      '<div class="day-total">총 차량 이동 약 ' + totKm.toFixed(0) + 'km · 약 ' + Math.round(totMin / 60 * 10) / 10 + '시간 (7일)</div>' + rows +
+      '<div class="note">일자 버튼(D1~D7)을 누르면 해당일 상세 동선과 구간별 거리를 볼 수 있음</div>';
+    return;
+  }
+  var d = DAYS[dayId - 1];
+  var km = 0, mn = 0;
+  d.legs.forEach(function (l) { km += l[0]; mn += l[1]; });
+  var html = '<div class="day-title" style="color:' + d.color + '">' + d.title + '</div>' +
+    '<div class="day-date">' + d.date + ' · 숙소 : ' + d.hotel + '</div>' +
+    '<div class="day-total">이 날 차량 이동 합계 : 약 ' + km.toFixed(1) + 'km · 약 ' + mn + '분</div>';
+  // 구간별 거리
+  d.legs.forEach(function (l, i) {
+    html += '<div class="seg" style="border-color:' + d.color + '">' +
+      '<span class="route">' + (i + 1) + '. ' + shortName(d.stops[i][3]) + ' → ' + shortName(d.stops[i + 1][3]) + '</span><br>' +
+      '<span class="dist">약 ' + l[0].toFixed(1) + 'km</span> · <span class="time">차량 약 ' + l[1] + '분</span></div>';
+  });
+  // 스탑 리스트
+  html += '<div class="stop-list">';
+  d.stops.forEach(function (s, i) {
+    html += '<div class="stop" onclick="map.setView([' + s[0] + ',' + s[1] + '], 14)">' +
+      '<div class="num" style="background:' + d.color + '">' + (i + 1) + '</div>' +
+      '<div class="t">' + s[2] + '</div>' +
+      '<div class="nm">' + s[3] + (s[4] ? '<small>' + s[4] + '</small>' : '') + '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function shortName(n) { return n.replace(/\s*\(.*?\)\s*/g, '').split(' 체크인')[0].split(' 인스펙션')[0].split(' 답사')[0].substring(0, 18); }
+
+render(0);
+</script>
+</body>
+</html>
